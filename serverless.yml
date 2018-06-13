@@ -1,0 +1,15 @@
+
+service: serverless-aws-python-alexa-skill
+
+frameworkVersion: ">=1.4.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: python3.6
+  profile: serverless
+
+functions:
+  ContestReminder:
+    handler: handler.lambda_handler
+    events:
+      - alexaSkill: amzn1.ask.skill.488471e3-12dc-4444-9eb4-67bc58b3f2ae
