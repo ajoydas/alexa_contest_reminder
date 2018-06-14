@@ -8,9 +8,6 @@ samsadsajid@gmail.com
 from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
 from datetime import datetime
-import html5lib
-import json
-import requests
 from collections import OrderedDict
 import pytz
 

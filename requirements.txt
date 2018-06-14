@@ -1,5 +1,2 @@
 beautifulsoup4
-pandas
-requests
 pytz
-html5lib
