@@ -7,9 +7,86 @@ provider:
   name: aws
   runtime: python3.6
   profile: serverless
+  environment:
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:BatchWriteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
 
 functions:
+  cron:
+    handler: crawler.run
+    timeout: 30
+    # events:
+    #   - schedule: rate(3 minutes)
+
+  # secondCron:
+  #   handler: handler.run
+  #   events:
+  #     # Invoke Lambda function every 2nd minute from Mon-Fri
+  #     - schedule: cron(0/2 * ? * MON-FRI *)
+  tests_db:
+    handler: tests/tests.test_db
+
   ContestReminder:
     handler: handler.lambda_handler
     events:
       - alexaSkill: amzn1.ask.skill.488471e3-12dc-4444-9eb4-67bc58b3f2ae
+
+
+resources:
+  Resources:
+    ContestCrawlerDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+          -
+            AttributeName: website
+            AttributeType: S
+          -
+            AttributeName: enddate
+            AttributeType: S
+
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          -
+            IndexName: website_index
+            KeySchema:
+              -
+                AttributeName: website
+                KeyType: HASH
+              -
+                AttributeName: enddate
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+
+
+  
+plugins:
+  - serverless-python-requirements
