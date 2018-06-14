@@ -7,13 +7,10 @@ samsadsajid@gmail.com
 
 from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
-import csv
 from datetime import datetime
 import html5lib
 import json
 import requests
-import objectpath
-import pandas as pd
 from collections import OrderedDict
 import pytz
 
@@ -29,64 +26,67 @@ def make_chunk(_list, splitter):
 
 
 def call_HackkerRank(url):
-	# query the website and return the html to the variable ‘page’
-	request = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-	page = urlopen(request).read()
+	try:
+		# query the website and return the html to the variable ‘page’
+		request = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+		page = urlopen(request).read()
 
-	# parse the html using beautiful soup and store in variable `soup`
-	soup = BeautifulSoup(page, 'html.parser')
+		# parse the html using beautiful soup and store in variable `soup`
+		soup = BeautifulSoup(page, 'html.parser')
 
-	data = []
+		data = []
 
-	contest_name = soup.findAll('span', {'itemprop': 'name'})[1:]
+		contest_name = soup.findAll('span', {'itemprop': 'name'})[1:]
 
-	start_time = soup.findAll('meta', {'itemprop': 'startDate'})[:len(contest_name)]
+		start_time = soup.findAll('meta', {'itemprop': 'startDate'})[:len(contest_name)]
 
-	end_time = soup.findAll('meta', {'itemprop': 'endDate'})[:len(contest_name)]
+		end_time = soup.findAll('meta', {'itemprop': 'endDate'})[:len(contest_name)]
 
-	# the following loop needs to be modified
-	for idx in range(0, len(contest_name)):
-		data.append(contest_name[idx].text)
-		data.append(start_time[idx]['content'])
-		data.append(end_time[idx]['content'])
+		# the following loop needs to be modified
+		for idx in range(0, len(contest_name)):
+			data.append(contest_name[idx].text)
+			data.append(start_time[idx]['content'])
+			data.append(end_time[idx]['content'])
 
-	header = ['CONTEST', 'START TIME', 'END TIME']
+		header = ['CONTEST', 'START TIME', 'END TIME']
 
-	processed_data = make_chunk(data, 3)
+		processed_data = make_chunk(data, 3)
 
-	for elem in processed_data:
-		start = elem[1]
-		end = elem[2]
+		for elem in processed_data:
+			start = elem[1]
+			end = elem[2]
 
-		local_datetime_start = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S.%fZ')
-		local_datetime_end = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S.%fZ')
+			local_datetime_start = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S.%fZ')
+			local_datetime_end = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S.%fZ')
 
-		tz = pytz.timezone('Asia/Dhaka')
+			tz = pytz.timezone('Asia/Dhaka')
 
-		local = tz.localize(local_datetime_start)
-		utc = local.astimezone(pytz.utc)
+			local = tz.localize(local_datetime_start)
+			utc = local.astimezone(pytz.utc)
 
-		elem[1] = utc.isoformat()
+			elem[1] = utc.isoformat()
 
-		local = tz.localize(local_datetime_end)
-		utc = local.astimezone(pytz.utc)
+			local = tz.localize(local_datetime_end)
+			utc = local.astimezone(pytz.utc)
 
-		elem[2] = utc.isoformat()
+			elem[2] = utc.isoformat()
 
-	df = pd.DataFrame(processed_data, columns=header).dropna()
-	df['SITE'] = 'HackkerRank'
-	print(df)
+			elem.append('HackkerRank')
+
+		return processed_data
+	except Exception as e:
+		return None
 
 
 def call_CodeChef(url):
-	# query the website and return the html to the variable ‘page’
-	request = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-	page = urlopen(request).read()
-
-	# parse the html using beautiful soup and store in variable `soup`
-	soup = BeautifulSoup(page, 'html.parser')
-
 	try:
+		# query the website and return the html to the variable ‘page’
+		request = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+		page = urlopen(request).read()
+
+		# parse the html using beautiful soup and store in variable `soup`
+		soup = BeautifulSoup(page, 'html.parser')
+
 		tables = soup.findAll('table', {'class': 'dataTable'})[:2]
 
 		data = [[i.text for i in table.findAll('td')] for table in tables]
@@ -116,29 +116,25 @@ def call_CodeChef(url):
 
 			elem[2] = utc.isoformat()
 
-			# print(elem)
+			elem.append('CodeChef')
 
-		header = ['CONTEST', 'START TIME', 'END TIME']
-
-		df = pd.DataFrame(processed_data, columns=header)
-		df['SITE'] = 'CodeChef'
-		print(df)
+		return processed_data
 
 	except Exception as e:
-		print("Error with loading the page.... :(\n{}" .format(e))
+		return None
 
 
 def call_TopCoder(url):
-	# query the website and return the html to the variable ‘page’
-	page = urlopen(url)
-
-	# parse the html using beautiful soup and store in variable `soup`
-	soup = BeautifulSoup(page, 'html.parser')
-
-	# print(soup.prettify())
-	data = []
-
 	try:
+		# query the website and return the html to the variable ‘page’
+		page = urlopen(url)
+
+		# parse the html using beautiful soup and store in variable `soup`
+		soup = BeautifulSoup(page, 'html.parser')
+
+		# print(soup.prettify())
+		data = []
+
 		rows = soup.find('tr', {'class': 'light'})
 		# print(rows)
 		links = rows.findAll('a')
@@ -181,21 +177,13 @@ def call_TopCoder(url):
 
 			elem[2] = utc.isoformat()
 
-		# print(dat)
+			elem.append('TopCoder')
 
-		header = ['CONTEST', 'START TIME', 'END TIME']
+		return dat
 
-		df = pd.DataFrame(dat, columns = header)
-		df['SITE'] = 'TopCoder'
-		print(df)
-		# column_headers = [td.get_text() for td in soup.findAll('tr', limit=2)[0].findAll('td')]
-		# print(column_headers)
-		# strip all carraige line, spaces and \n
-		# column_headers = process_list_header(column_headers)
-		# print(column_headers)
 
 	except Exception as e:
-		print("Error with loading the page.... :(\n{}" .format(e))
+		return None
 
 
 def call_Codeforces(url):
@@ -270,24 +258,22 @@ def call_Codeforces(url):
 
 			elem[2] = utc.isoformat()
 
-		header = ['CONTEST', 'START TIME', 'END TIME']
+			elem.append('Codeforces')
 
-		df = pd.DataFrame(name, columns = header)
-		df['SITE'] = 'Codeforces'
-		print(df)
+		return name
 
 	except Exception as e:
-		print(str(e))
+		return None
 
 
 def call_SpoJ(url):
-	# query the website and return the html to the variable ‘page’
-	page = urlopen(url)
-
-	# parse the html using beautiful soup and store in variable `soup`
-	soup = BeautifulSoup(page, 'html.parser')
-
 	try:
+		# query the website and return the html to the variable ‘page’
+		page = urlopen(url)
+
+		# parse the html using beautiful soup and store in variable `soup`
+		soup = BeautifulSoup(page, 'html.parser')
+
 		tables = soup.findAll('table', {'class': 'table-condensed'})[:2]
 
 		data = [[i.text for i in table.findAll('td')] for table in tables]
@@ -296,14 +282,13 @@ def call_SpoJ(url):
 
 		processed_data = make_chunk(bulk, 3)
 
-		header = ['CONTEST', 'START TIME', 'END TIME']
+		for elem in processed_data:
+			elem.append('SpoJ')
 
-		df = pd.DataFrame(processed_data, columns=header)
-		df['SITE'] = 'SpoJ'
-		print(df)
+		return processed_data
 
 	except Exception as e:
-		raise
+		return None
 
 
 if __name__ == '__main__':
@@ -318,18 +303,28 @@ if __name__ == '__main__':
 
 	if choice == 1:
 		url = "http://www.spoj.com/contests/"
-		call_SpoJ(url)
+		_list = call_SpoJ(url)
+		print(_list)
+
 	elif choice == 2:
 		url = "https://codeforces.com/contests"
-		call_Codeforces(url)
+		_list = call_Codeforces(url)
+		print(_list)
+
 	elif choice == 3:
 		url = "https://community.topcoder.com/longcontest/"
-		call_TopCoder(url)
+		_list = call_TopCoder(url)
+		print(_list)
+
 	elif choice == 4:
 		url = "https://www.codechef.com/contests"
-		call_CodeChef(url)
+		_list = call_CodeChef(url)
+		print(_list)
+
 	elif choice == 5:
 		url = "https://www.hackerrank.com/contests"
-		call_HackkerRank(url)
+		_list = call_HackkerRank(url)
+		print(_list)
+
 	else:
 		print("Uhh--Ohh!!! :( You just killed Alexa! :'(")
