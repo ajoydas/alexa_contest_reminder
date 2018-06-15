@@ -14,6 +14,11 @@ import objectpath
 from collections import OrderedDict
 import pytz
 
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
+
+
+dynamodb = boto3.resource('dynamodb')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -89,7 +94,7 @@ def call_HackkerRank(url):
 
 			elem[2] = utc.isoformat()
 
-			elem.append('HackkerRank')
+			elem.append('hackerrank')
 
 		return processed_data
 	except Exception as e:
@@ -134,7 +139,7 @@ def call_CodeChef(url):
 
 			elem[2] = utc.isoformat()
 
-			elem.append('CodeChef')
+			elem.append('codechef')
 
 		return processed_data
 
@@ -195,7 +200,7 @@ def call_TopCoder(url):
 
 			elem[2] = utc.isoformat()
 
-			elem.append('TopCoder')
+			elem.append('topcoder')
 
 		return dat
 
@@ -276,7 +281,7 @@ def call_Codeforces(url):
 
 			elem[2] = utc.isoformat()
 
-			elem.append('Codeforces')
+			elem.append('codeforces')
 
 		return name
 
@@ -301,7 +306,7 @@ def call_SpoJ(url):
 		processed_data = make_chunk(bulk, 3)
 
 		for elem in processed_data:
-			elem.append('SpoJ')
+			elem.append('spoj')
 
 		return processed_data
 
@@ -328,3 +333,72 @@ def run(event, context):
 			data = call_HackkerRank(url)
 
 		print(data)
+		if(data == None):
+			print("No data for updating.")
+		else:
+			update_db(data)
+
+
+# After Refetching
+def update_db(updated_data):
+	if len(updated_data) == 0:
+		print("No data found!")
+		return
+
+	website = updated_data[0][3]
+	print("Updating for website:"+ website)
+
+	table = dynamodb.Table(os.environ['DYNAMODB_TABLE'])
+	response = table.query(
+	    IndexName='website_index',
+	    KeyConditionExpression=Key('website').eq(website)
+	)
+	items = response['Items']
+	# print(items)
+
+	matched_data = [False]*len(updated_data)
+
+	for item in items:
+	    matched = False
+	    for indx, i in enumerate(updated_data):
+	        if i[0] == item['name']: 
+	            matched = True
+	            matched_data[indx] = True
+	            print(item)
+	            if i[1] != item['startdate'] or i[2] != item['enddate']:
+	#                 update
+	                table.update_item(
+	                    Key={
+	                        'id': item['id'],
+	                    },
+	                    UpdateExpression='SET startdate = :startdate, enddate = :enddate',
+	                    ExpressionAttributeValues={
+	                        ':startdate': i[1],
+	                        ':enddate': i[2]
+	                    }
+	                )
+
+	    if matched is False:
+	#         delete
+	        table.delete_item(
+	            Key={
+	                'id': item['id']
+	            }
+	        )
+
+	# print(matched_data)
+
+	with table.batch_writer() as batch:
+	    for indx in range(len(matched_data)):
+	        if matched_data[indx] is False:
+	#             add
+	            i = updated_data[indx]
+	            batch.put_item(
+	            Item={
+	                'id': str(uuid.uuid4()),
+	                'name': i[0],
+	                'startdate': i[1],
+	                'enddate': i[2],
+	                'website': i[3],
+	            }
+	        )

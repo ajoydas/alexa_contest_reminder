@@ -19,13 +19,15 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
         - dynamodb:BatchWriteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+      Resource: 
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}/index/*"
 
 
 functions:
   cron:
     handler: crawler.run
-    timeout: 30
+    timeout: 20
     # events:
     #   - schedule: rate(3 minutes)
 
@@ -36,6 +38,9 @@ functions:
   #     - schedule: cron(0/2 * ? * MON-FRI *)
   tests_db:
     handler: tests/tests.test_db
+
+  get_site_data:
+    handler: handler.get_site_data
 
   ContestReminder:
     handler: handler.lambda_handler
