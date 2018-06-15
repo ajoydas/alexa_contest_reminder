@@ -1,9 +1,5 @@
 beautifulsoup4
-<<<<<<< HEAD
 requests
 objectpath
 pytz
 html5lib
-=======
-pytz
->>>>>>> 0b1fde7cda8279a824da3661b5f53591dc53db42

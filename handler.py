@@ -6,11 +6,12 @@ import os
 from pprint import pprint
 from datetime import datetime
 import dateutil.parser
+import pytz
 
 
 from boto3.dynamodb.conditions import Key, Attr
 
-
+utc=pytz.UTC
 dynamodb = boto3.resource('dynamodb')
 sites_available = ['spoj','codechef','codeforces','topcoder','hackerrank']
 
@@ -98,6 +99,10 @@ def lambda_handler(event, context):
 
     elif event['request']['type'] == "IntentRequest":
         return intent_router(event, context)
+    
+    else:
+        return on_error(event, context)
+
 
 
 ##############################
@@ -145,6 +150,7 @@ def single_site_intent(event, context):
     
     if(len(data)) == 0:
         speak_response = "There is no contest available now on "+ site
+        card_response = speak_response
     else:
         contest_name = data[0][0]
         startdate_string =  data[0][1].strftime('%B %d, %Y, %I %M %p')
@@ -156,7 +162,7 @@ def single_site_intent(event, context):
         card_response = "Site: "+ site +"\n"+\
                         "Contest: "+ contest_name +"\n"+\
                         "Start Time: "+ startdate_string +"\n"+\
-                        "End Time: " + enddate_string + ", "+ endtime_string
+                        "End Time: " + enddate_string + ", "+ endtime_string+"\n"
     
     print(speak_response)
     print(card_response)
@@ -167,6 +173,7 @@ def all_site_intent(event, context):
     data  = get_all_site_data(1)
     if(len(data)) == 0:
         speak_response = "There is no contest available now on any website."
+        card_response = speak_response
     else:
         site = data[0][3].title()
         contest_name = data[0][0]
@@ -231,11 +238,11 @@ def cancel_intent():
 
 def help_intent():
     response = "We can give you the current and future contests from different websites. "+\
-                "We have currently enlisted: Codeforces, Codechef, Spoj, Hackerrank and Topcoder contests."+\
+                "We have currently enlisted: Codeforces, Codechef, Spoj, Hackerrank and Topcoder contests. "+\
                 "For example: You can say like this: " +\
                 "Ask Contest Reminder what is the next contest? "+\
                 "or Ask Contest Reminder what is the next contest on website?"
-    return statement("Help Request", response)       #same here don't use CancelIntent
+    return statement("Help Information", response)       #same here don't use CancelIntent
 
 
 def stop_intent():
@@ -251,6 +258,9 @@ def on_launch(event, context):
     response = "Welcome from Contest Reminder. Ask me about the contests."
     return statement("Contest Reminder", response)
 
+def on_error(event, context):
+    response = "Sorry. We couldn't recognize your request. Please try again with a valid request."
+    return statement("Contest Reminder", response)
 
 
 def get_site_data(site, count):
@@ -272,8 +282,8 @@ def get_site_data(site, count):
 
     fetched_data = []
     for item in items:
-        startdate = dateutil.parser.parse(item['startdate'])
-        enddate = dateutil.parser.parse(item['enddate'])
+        startdate = dateutil.parser.parse(item['startdate']).replace(tzinfo=utc)
+        enddate = dateutil.parser.parse(item['enddate']).replace(tzinfo=utc)
 
         fetched_data.append([item['name'],startdate, enddate, item['website']])
 
