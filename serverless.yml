@@ -26,7 +26,7 @@ provider:
 
 functions:
   cron:
-    handler: crawler.run
+    handler: crawler/crawler.run
     timeout: 20
     # events:
     #   - schedule: rate(3 minutes)
@@ -40,12 +40,20 @@ functions:
     handler: tests/tests.test_db
 
   get_site_data:
-    handler: handler.get_site_data
+    handler: functions/handler.get_site_data
 
   ContestReminder:
-    handler: handler.lambda_handler
+    handler: functions/handler.lambda_handler
     events:
       - alexaSkill: amzn1.ask.skill.488471e3-12dc-4444-9eb4-67bc58b3f2ae
+
+  hook:
+    handler: functions/hook.endpoint
+    events:
+      - http:
+          path: hook
+          method: post
+          cros: true
 
 
 resources:

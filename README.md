@@ -20,6 +20,7 @@ For AllSiteIntent:
 3. next contest on all site
 4. next contest
 5. what is the next contest
+6. recent contest among all site
 
 For SingleSiteIntent:
 1. recent contest on {site}
