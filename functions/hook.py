@@ -45,7 +45,7 @@ def endpoint(event, context):
 
 def single_site_intent(body):
     site = body['queryResult']['parameters']['site']
-    if site == "" or site is None:
+    if site == "" or site is None or not(site in sites_available):
         audio_res = "Select one of the following websites"
         text_res = audio_res
         return build_response(text_res, audio_res, sites_available)
@@ -60,10 +60,10 @@ def single_site_intent(body):
         contest_name = data[0][0]
         startdate_string = data[0][1].strftime('%B %d, %Y, %I %M %p')
         enddate_string = data[0][2].strftime('%B %d, %Y')
-        endtime_string = data[0][2].strftime('%I %M %p')
-        speak_response = "The next contest on " + site + " is <prosody volume='x-loud' rate='slow'>" \
+        endtime_string = data[0][2].strftime('%I:%M%p')
+        speak_response = "The next contest on " + site + " is <prosody volume='x-loud' rate='medium'>" \
                          + contest_name + "</prosody> and it will end on <say-as interpret-as='spell-out'>UTC</say-as> " \
-                         + enddate_string + ", <say-as interpret-as='cardinal'>" + endtime_string + "</say-as>"
+                         + enddate_string + ", <say-as interpret-as='time' format='hms12'>" + endtime_string + "</say-as>"
         card_response = "Site: " + site + "\n" + \
                         "Contest: " + contest_name + "\n" + \
                         "Start Time: " + startdate_string + "\n" + \
@@ -85,10 +85,10 @@ def all_site_intent(body):
         contest_name = data[0][0]
         startdate_string = data[0][1].strftime('%B %d, %Y, %I %M %p')
         enddate_string = data[0][2].strftime('%B %d, %Y')
-        endtime_string = data[0][2].strftime('%I %M %p')
-        speak_response = "The next contest is on " + site + " and it is <prosody volume='x-loud' rate='slow'>" \
+        endtime_string = data[0][2].strftime('%I:%M%p')
+        speak_response = "The next contest is on " + site + " and it is <prosody volume='x-loud' rate='medium'>" \
                          + contest_name + "</prosody> and it will end on <say-as interpret-as='spell-out'>UTC</say-as> " \
-                         + enddate_string + ", <say-as interpret-as='cardinal'>" + endtime_string + "</say-as>"
+                         + enddate_string + ", <say-as interpret-as='time' format='hms12'>" + endtime_string + "</say-as>"
         card_response = "Site: " + site + "\n" + \
                         "Contest: " + contest_name + "\n" + \
                         "Start: " + startdate_string + "\n" + \
@@ -116,7 +116,7 @@ def single_site_all_contest_intent(body):
         card_response = speak_response
     else:
         speak_response = "The next " + str(len(data)) + " contests on " + site \
-                         + " are <prosody volume='x-loud' rate='slow'>"
+                         + " are <prosody volume='x-loud' rate='medium'>"
         card_response = "Site: " + site + "\n"
 
         for contest in data:
