@@ -10,6 +10,13 @@ import pytz
 utc=pytz.UTC
 dynamodb = boto3.resource('dynamodb')
 sites_available = ['spoj','codechef','codeforces','topcoder','hackerrank']
+links_parsed = {
+    'spoj': 'http://www.spoj.com/contests/',
+    'codechef': 'https://www.codechef.com/contests',
+    'codeforces': 'https://codeforces.com/contests',
+    'topcoder': 'https://community.topcoder.com/longcontest/',
+    'hackerrank': 'https://www.hackerrank.com/contests'
+}
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
