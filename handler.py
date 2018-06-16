@@ -206,7 +206,7 @@ def single_site_all_contest_intent(event, context):
     if(len(data)) == 0:
         speak_response = "There is no contest available now on "+ site
     else:
-        speak_response = "The next 5 contests on "+ site \
+        speak_response = "The next "+ len(data)+" contests on "+ site \
                             +" are <prosody volume='x-loud' rate='slow'>"
         card_response = "Site: "+ site +"\n"
 
